@@ -1,0 +1,2525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Badminton Doubles Scheduler - Structurally Fair Match & Partner Generator</title>
+  <meta name="description" content="Structurally fair badminton doubles tournament and casual match scheduler. Equal partners and fair game distribution for individual players.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       Design System & CSS Custom Properties
+       ========================================================================== */
+    :root {
+      --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+      /* High-contrast Court Green & Slate Light Theme */
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --border-color: #e2e8f0;
+      --border-hover: #cbd5e1;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+
+      --court-green: #059669;
+      --court-green-hover: #047857;
+      --court-green-subtle: rgba(5, 150, 105, 0.1);
+      --court-green-border: rgba(5, 150, 105, 0.25);
+
+      --amber-playing: #d97706;
+      --amber-playing-subtle: rgba(217, 119, 6, 0.12);
+      --amber-playing-border: rgba(217, 119, 6, 0.3);
+
+      --sky-accent: #0284c7;
+      --sky-subtle: rgba(2, 132, 199, 0.1);
+
+      --danger: #dc2626;
+      --danger-subtle: rgba(220, 38, 38, 0.08);
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+      --shadow-court: 0 8px 24px -4px rgba(5, 150, 105, 0.15);
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-full: 9999px;
+
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Dark Mode Theme */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg-base: #0b1118;
+        --bg-surface: #121c27;
+        --bg-surface-elevated: #172433;
+        --bg-subtle: #1c2b3c;
+        --border-color: #223447;
+        --border-hover: #334b63;
+        
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --text-dim: #64748b;
+
+        --court-green: #10b981;
+        --court-green-hover: #34d399;
+        --court-green-subtle: rgba(16, 185, 129, 0.16);
+        --court-green-border: rgba(16, 185, 129, 0.35);
+
+        --amber-playing: #f59e0b;
+        --amber-playing-subtle: rgba(245, 158, 11, 0.18);
+        --amber-playing-border: rgba(245, 158, 11, 0.4);
+
+        --sky-accent: #38bdf8;
+        --sky-subtle: rgba(56, 189, 248, 0.15);
+
+        --danger: #ef4444;
+        --danger-subtle: rgba(239, 68, 68, 0.15);
+
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 12px 20px -3px rgba(0, 0, 0, 0.5);
+        --shadow-court: 0 8px 28px -4px rgba(16, 185, 129, 0.2);
+      }
+    }
+
+    [data-theme="dark"] {
+      --bg-base: #0b1118;
+      --bg-surface: #121c27;
+      --bg-surface-elevated: #172433;
+      --bg-subtle: #1c2b3c;
+      --border-color: #223447;
+      --border-hover: #334b63;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --court-green: #10b981;
+      --court-green-hover: #34d399;
+      --court-green-subtle: rgba(16, 185, 129, 0.16);
+      --court-green-border: rgba(16, 185, 129, 0.35);
+
+      --amber-playing: #f59e0b;
+      --amber-playing-subtle: rgba(245, 158, 11, 0.18);
+      --amber-playing-border: rgba(245, 158, 11, 0.4);
+
+      --sky-accent: #38bdf8;
+      --sky-subtle: rgba(56, 189, 248, 0.15);
+
+      --danger: #ef4444;
+      --danger-subtle: rgba(239, 68, 68, 0.15);
+
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 20px -3px rgba(0, 0, 0, 0.5);
+      --shadow-court: 0 8px 28px -4px rgba(16, 185, 129, 0.2);
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --border-color: #e2e8f0;
+      --border-hover: #cbd5e1;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+
+      --court-green: #059669;
+      --court-green-hover: #047857;
+      --court-green-subtle: rgba(5, 150, 105, 0.1);
+      --court-green-border: rgba(5, 150, 105, 0.25);
+
+      --amber-playing: #d97706;
+      --amber-playing-subtle: rgba(217, 119, 6, 0.12);
+      --amber-playing-border: rgba(217, 119, 6, 0.3);
+
+      --sky-accent: #0284c7;
+      --sky-subtle: rgba(2, 132, 199, 0.1);
+
+      --danger: #dc2626;
+      --danger-subtle: rgba(220, 38, 38, 0.08);
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+      --shadow-court: 0 8px 24px -4px rgba(5, 150, 105, 0.15);
+    }
+
+    /* Base Setup */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding-bottom: 80px;
+      transition: background-color var(--transition-normal), color var(--transition-normal);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px 16px 40px;
+    }
+
+    /* ==========================================================================
+       Header & Navigation
+       ========================================================================== */
+    header {
+      padding: 12px 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--court-green) 0%, #047857 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-court);
+      flex-shrink: 0;
+    }
+
+    .brand-icon svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 1.28rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border-color: var(--border-hover);
+    }
+
+    .btn-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Sync Status Bar */
+    .sync-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      gap: 8px;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 600;
+    }
+
+    .sync-indicator-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--court-green);
+      position: relative;
+    }
+
+    .sync-indicator-dot.pulse::after {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: 50%;
+      background: inherit;
+      opacity: 0.4;
+      animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes ping {
+      75%, 100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    .sync-indicator-dot.offline {
+      background: var(--amber-playing);
+    }
+
+    .sync-note {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      text-align: right;
+    }
+
+    /* ==========================================================================
+       Cards & Containers
+       ========================================================================== */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* ==========================================================================
+       Setup View: Player Names & Configuration
+       ========================================================================== */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .text-input {
+      flex: 1;
+      height: 48px;
+      padding: 0 16px;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--text-main);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: all var(--transition-fast);
+    }
+
+    .text-input:focus {
+      border-color: var(--court-green);
+      background: var(--bg-surface);
+      box-shadow: 0 0 0 3px var(--court-green-subtle);
+    }
+
+    .text-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      font-weight: 600;
+      height: 48px;
+      padding: 0 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all var(--transition-fast);
+      user-select: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--court-green);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(5, 150, 105, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--court-green-hover);
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-hover);
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+    }
+
+    .btn-danger-outline:hover {
+      background: var(--danger-subtle);
+      border-color: var(--danger);
+    }
+
+    .btn-sm {
+      height: 36px;
+      padding: 0 14px;
+      font-size: 0.84rem;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Chips Container */
+    .chips-wrapper {
+      min-height: 52px;
+      padding: 10px;
+      background: var(--bg-subtle);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .chips-empty-hint {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      padding: 8px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .player-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+      animation: chipPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes chipPop {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .chip-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--court-green-subtle);
+      color: var(--court-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .chip-remove {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      transition: all var(--transition-fast);
+      margin-left: 2px;
+    }
+
+    .chip-remove:hover {
+      background: var(--danger-subtle);
+      color: var(--danger);
+    }
+
+    /* Quick helper pills */
+    .quick-add-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .quick-add-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .quick-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .quick-pill:hover {
+      background: var(--court-green-subtle);
+      color: var(--court-green);
+      border-color: var(--court-green-border);
+    }
+
+    /* Fairness calculation preview banner */
+    .fairness-preview-box {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: var(--court-green-subtle);
+      border: 1px solid var(--court-green-border);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .fairness-preview-icon {
+      color: var(--court-green);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .fairness-preview-content h4 {
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--court-green);
+      margin-bottom: 2px;
+    }
+
+    .fairness-preview-content p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Setup Actions */
+    .setup-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .setup-actions .btn-primary {
+      flex: 2;
+    }
+
+    .setup-actions .btn-secondary {
+      flex: 1;
+    }
+
+    /* ==========================================================================
+       Session Active View (Locked Header & Rounds)
+       ========================================================================== */
+    .session-top-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .session-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .stat-item {
+      padding: 8px 4px;
+      border-radius: var(--radius-md);
+      background: var(--bg-subtle);
+    }
+
+    .stat-val {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .stat-lbl {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .session-progress-container {
+      margin-bottom: 14px;
+    }
+
+    .session-progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--court-green) 0%, #34d399 100%);
+      border-radius: var(--radius-full);
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .session-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .session-controls .btn {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    /* Locked player list accordion/summary */
+    .locked-players-box {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .locked-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .locked-tag {
+      background: var(--bg-subtle);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       Round Cards
+       ========================================================================== */
+    .round-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      transition: all var(--transition-fast);
+    }
+
+    .round-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .round-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .round-badge {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--court-green);
+      background: var(--court-green-subtle);
+      border: 1px solid var(--court-green-border);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    .round-progress-pill {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+
+    .round-progress-pill.completed {
+      background: var(--court-green-subtle);
+      color: var(--court-green);
+      border-color: var(--court-green-border);
+    }
+
+    /* Bye Banner */
+    .bye-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--amber-playing-subtle);
+      border: 1px solid var(--amber-playing-border);
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      color: var(--amber-playing);
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .bye-banner svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Teams Breakdown */
+    .round-teams-section {
+      margin-bottom: 16px;
+    }
+
+    .section-small-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 8px;
+    }
+
+    .team-badge {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .team-badge-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .team-badge-players {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Matches List */
+    .matches-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .match-item {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+
+    /* Match Status States */
+    .match-item.status-playing {
+      background: var(--bg-surface);
+      border-color: var(--amber-playing);
+      box-shadow: 0 0 0 1px var(--amber-playing), var(--shadow-sm);
+    }
+
+    .match-item.status-played {
+      opacity: 0.62;
+      filter: grayscale(15%);
+      background: var(--bg-subtle);
+      border-color: var(--border-color);
+    }
+
+    .match-item.status-played:hover {
+      opacity: 0.9;
+    }
+
+    .match-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .match-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .match-live-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      display: none;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .match-item.status-playing .match-live-tag {
+      display: inline-flex;
+      background: var(--amber-playing-subtle);
+      color: var(--amber-playing);
+      border: 1px solid var(--amber-playing-border);
+    }
+
+    .match-item.status-played .match-live-tag {
+      display: inline-flex;
+      background: var(--court-green-subtle);
+      color: var(--court-green);
+      border: 1px solid var(--court-green-border);
+    }
+
+    .match-teams-display {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .team-display-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .team-display-box.text-right {
+      text-align: right;
+    }
+
+    .team-side-title {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .team-names-str {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.25;
+    }
+
+    .match-vs-divider {
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--text-dim);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .match-item.status-playing .match-vs-divider {
+      color: var(--amber-playing);
+      border-color: var(--amber-playing-border);
+    }
+
+    /* Match Action Buttons */
+    .match-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .btn-match-state {
+      height: 40px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-display);
+      font-size: 0.86rem;
+      font-weight: 700;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all var(--transition-fast);
+      user-select: none;
+    }
+
+    .btn-match-state svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-match-state:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border-color: var(--border-hover);
+    }
+
+    /* Active Playing Button */
+    .btn-match-state.active-playing {
+      background: var(--amber-playing);
+      color: #ffffff;
+      border-color: var(--amber-playing);
+      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+    }
+
+    .btn-match-state.active-playing:hover {
+      background: #b45309;
+      border-color: #b45309;
+    }
+
+    /* Active Played Button */
+    .btn-match-state.active-played {
+      background: var(--court-green);
+      color: #ffffff;
+      border-color: var(--court-green);
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+    }
+
+    .btn-match-state.active-played:hover {
+      background: var(--court-green-hover);
+      border-color: var(--court-green-hover);
+    }
+
+    /* ==========================================================================
+       Player Activity & Fairness Table
+       ========================================================================== */
+    .stats-table-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0 -20px;
+      padding: 0 20px;
+    }
+
+    .fairness-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    .fairness-table th {
+      padding: 10px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    .fairness-table td {
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    .fairness-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .player-cell-name {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .player-status-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .player-status-badge.on-court {
+      background: var(--amber-playing-subtle);
+      color: var(--amber-playing);
+      border: 1px solid var(--amber-playing-border);
+    }
+
+    .player-status-badge.resting {
+      background: var(--bg-subtle);
+      color: var(--text-dim);
+    }
+
+    .player-status-badge.bye {
+      background: var(--sky-subtle);
+      color: var(--sky-accent);
+    }
+
+    .matches-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 26px;
+      padding: 0 8px;
+      border-radius: var(--radius-full);
+      background: var(--court-green-subtle);
+      color: var(--court-green);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 17, 24, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-fast);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(12px) scale(0.96);
+      transition: transform var(--transition-normal);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-overlay.open .modal-content {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      overflow-y: auto;
+    }
+
+    .whatsapp-textarea {
+      width: 100%;
+      height: 220px;
+      padding: 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text-main);
+      resize: vertical;
+      margin-top: 10px;
+      outline: none;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--text-main);
+      color: var(--bg-surface);
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      font-size: 0.86rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all var(--transition-normal);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Responsive Utilities */
+    @media (max-width: 480px) {
+      .app-container {
+        padding: 12px 12px 60px;
+      }
+      .brand-text h1 {
+        font-size: 1.15rem;
+      }
+      .match-teams-display {
+        gap: 6px;
+      }
+      .team-names-str {
+        font-size: 0.88rem;
+      }
+      .session-stats-grid {
+        gap: 8px;
+      }
+      .stat-val {
+        font-size: 1.15rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header>
+      <div class="header-top">
+        <a href="#" class="brand">
+          <div class="brand-icon" aria-hidden="true">
+            <!-- Badminton Shuttlecock SVG Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 21a2 2 0 0 1-2-2c0-1.5 2-4 2-4s2 2.5 2 4a2 2 0 0 1-2 2z"></path>
+              <path d="M5.5 8L10 15"></path>
+              <path d="M18.5 8L14 15"></path>
+              <path d="M4 4l8 11 8-11"></path>
+              <path d="M7 6h10"></path>
+              <path d="M8.5 10h7"></path>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>Badminton Doubles</h1>
+            <p>Fair Partner & Round-Robin Scheduler</p>
+          </div>
+        </a>
+
+        <div class="header-actions">
+          <button id="themeToggleBtn" class="btn-icon" title="Toggle Light / Dark mode" aria-label="Toggle theme">
+            <!-- Sun / Moon Icon -->
+            <svg id="themeIconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg id="themeIconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          <button id="shareLinkBtn" class="btn-icon" title="Copy shareable link" aria-label="Copy share link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Sync / Storage Status Bar -->
+      <div class="sync-status-bar" id="syncStatusBar">
+        <div class="sync-pill">
+          <span class="sync-indicator-dot pulse" id="syncDot"></span>
+          <span id="syncStatusText">Connecting sync...</span>
+        </div>
+        <div class="sync-note" id="syncNoteText">Auto-saving changes</div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="appMain">
+      
+      <!-- ===================================================================
+           VIEW 1: SETUP CARD (Displayed before schedule is created)
+           =================================================================== -->
+      <section id="setupView" class="card" aria-label="Tournament Setup">
+        <h2 class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--court-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          Player Setup
+        </h2>
+        <p class="card-subtitle">Add players who are playing doubles today. Minimum 4 players (any count: 6, 7, 8, 12, etc.).</p>
+
+        <!-- Player Name Input -->
+        <form id="addPlayerForm" class="input-row" onsubmit="event.preventDefault(); window.badmintonApp.addPlayerFromInput();">
+          <input 
+            type="text" 
+            id="playerNameInput" 
+            class="text-input" 
+            placeholder="Enter player name (press Enter)..." 
+            autocomplete="off"
+            maxlength="32"
+          >
+          <button type="submit" class="btn btn-primary" id="addPlayerBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add
+          </button>
+        </form>
+
+        <!-- Quick Presets -->
+        <div class="quick-add-group">
+          <span class="quick-add-label">Quick test:</span>
+          <button type="button" class="quick-pill" onclick="window.badmintonApp.loadSamplePlayers(6)">+ 6 Players</button>
+          <button type="button" class="quick-pill" onclick="window.badmintonApp.loadSamplePlayers(7)">+ 7 Players (Odd / Bye)</button>
+          <button type="button" class="quick-pill" onclick="window.badmintonApp.loadSamplePlayers(8)">+ 8 Players</button>
+        </div>
+
+        <!-- Removable Name Chips -->
+        <div class="chips-wrapper" id="playerChipsContainer">
+          <div class="chips-empty-hint">No players added yet. Add at least 4 players.</div>
+        </div>
+
+        <!-- Fairness Calculation Info Box -->
+        <div class="fairness-preview-box" id="fairnessPreviewBox" style="display: none;">
+          <div class="fairness-preview-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div class="fairness-preview-content" id="fairnessPreviewContent">
+            <!-- Injected via JavaScript -->
+          </div>
+        </div>
+
+        <!-- Setup Action Buttons -->
+        <div class="setup-actions">
+          <button type="button" id="createScheduleBtn" class="btn btn-primary" disabled onclick="window.badmintonApp.createSchedule()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Create schedule
+          </button>
+          <button type="button" id="clearPlayersBtn" class="btn btn-secondary" onclick="window.badmintonApp.clearPlayersDraft()">
+            Clear
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 2: ACTIVE SCHEDULE & ROUNDS (Displayed once schedule is created)
+           =================================================================== -->
+      <section id="scheduleView" style="display: none;" aria-label="Active Tournament Schedule">
+        
+        <!-- Session Overview & Controls Panel -->
+        <div class="session-top-panel">
+          <div class="session-stats-grid">
+            <div class="stat-item">
+              <div class="stat-val" id="statPlayerCount">0</div>
+              <div class="stat-lbl">Players</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="statRoundCount">0</div>
+              <div class="stat-lbl">Rounds</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-val" id="statMatchesPlayed">0 / 0</div>
+              <div class="stat-lbl">Completed</div>
+            </div>
+          </div>
+
+          <!-- Overall Progress Bar -->
+          <div class="session-progress-container">
+            <div class="session-progress-label">
+              <span>Session Progress</span>
+              <span id="sessionProgressPercent">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="sessionProgressBar" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="session-controls">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.badmintonApp.openWhatsAppModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              WhatsApp Text
+            </button>
+            <button type="button" class="btn btn-danger-outline btn-sm" onclick="window.badmintonApp.confirmNewSession()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              Start a new session
+            </button>
+          </div>
+
+          <!-- Locked Players Summary -->
+          <div class="locked-players-box">
+            <div>
+              <strong>Locked Player Roster:</strong>
+              <div class="locked-tags" id="lockedPlayerTags"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rounds Cards Container -->
+        <div id="roundsListContainer">
+          <!-- Dynamically populated rounds -->
+        </div>
+
+        <!-- Player Activity & Fairness Tracker Table -->
+        <div class="stats-table-card">
+          <h2 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--court-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20V10"></path>
+              <path d="M18 20V4"></path>
+              <path d="M6 20v-4"></path>
+            </svg>
+            Player Activity Tracker
+          </h2>
+          <p class="card-subtitle">Finished matches per player. Structural fairness guarantees everyone partners with all others.</p>
+          
+          <div class="table-responsive">
+            <table class="fairness-table" aria-label="Player Finished Matches Table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Status</th>
+                  <th style="text-align: center;">Finished Matches</th>
+                  <th style="text-align: right;" id="byeHeaderCol">Byes</th>
+                </tr>
+              </thead>
+              <tbody id="playerStatsTableBody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- WhatsApp Export Modal -->
+  <div class="modal-overlay" id="whatsAppModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>WhatsApp Schedule</h3>
+        <button type="button" class="btn-icon" onclick="window.badmintonApp.closeWhatsAppModal()" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Copy formatted text to paste into your badminton WhatsApp group:</p>
+        <textarea id="whatsAppTextarea" class="whatsapp-textarea" readonly></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.badmintonApp.closeWhatsAppModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="window.badmintonApp.copyWhatsAppText()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copy text
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Confirmation Modal -->
+  <div class="modal-overlay" id="confirmResetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Start a New Session?</h3>
+        <button type="button" class="btn-icon" onclick="window.badmintonApp.closeResetModal()" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>This will erase the current tournament schedule, all match statuses, and finished match counts. This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.badmintonApp.closeResetModal()">Cancel</button>
+        <button type="button" class="btn btn-danger-outline" onclick="window.badmintonApp.executeNewSessionReset()">Yes, delete & reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container">
+    <div id="appToast" class="toast">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span id="toastMessage">Success</span>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       Application Logic (Core Scheduling Engine & Live Storage Provider)
+       ========================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* -----------------------------------------------------------------------
+         Storage & Sync Provider Configuration
+         Supports:
+         1. Claude Artifact "db" capability: sessions/main with onSnapshot & set
+         2. Backend Express Server: REST /api/session + SSE /api/events
+         3. LocalStorage Fallback + Cross-tab BroadcastChannel
+         ----------------------------------------------------------------------- */
+      const LOCAL_STORAGE_KEY = 'badminton_doubles_scheduler_v1';
+      const BROADCAST_CHANNEL_NAME = 'badminton_scheduler_sync';
+
+      // Internal State
+      let state = {
+        players: [],
+        rounds: []
+      };
+
+      // Draft players list while in setup mode
+      let draftPlayers = [];
+
+      let syncProvider = 'local'; // 'artifact', 'server', or 'local'
+      let isSaving = false;
+      let broadcastChannel = null;
+
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+          broadcastChannel.onmessage = function (event) {
+            if (event.data && typeof event.data === 'object') {
+              applyIncomingState(event.data, false);
+            }
+          };
+        }
+      } catch (e) {
+        console.warn('BroadcastChannel not supported', e);
+      }
+
+      /* -----------------------------------------------------------------------
+         Scheduling Math Engine (Circle Method + Round-Robin Teams)
+         ----------------------------------------------------------------------- */
+
+      // Fisher-Yates array shuffle for initial random circle arrangement
+      function shuffleArray(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      /**
+       * Circle (Round-Robin) Algorithm for Partner Assignment
+       * - If N is even: N-1 rounds. Every player partners with every other player exactly once.
+       * - If N is odd: N rounds. Adds 1 dummy bye. Every player sits out exactly 1 round and
+       *   partners with every other player exactly once.
+       */
+      function generateCircleRounds(playerNames) {
+        const n = playerNames.length;
+        if (n < 4) return [];
+
+        const isOdd = n % 2 !== 0;
+        // Shuffle player names once at start so schedule differs each session
+        const shuffled = shuffleArray(playerNames);
+
+        // If odd, add a dummy BYE marker
+        const circle = isOdd ? [...shuffled, '__BYE__'] : [...shuffled];
+        const m = circle.length; // Always even
+        const totalRounds = m - 1; // n - 1 if even, n if odd
+
+        const generatedRounds = [];
+
+        for (let r = 0; r < totalRounds; r++) {
+          const teams = [];
+          const bye = [];
+
+          for (let k = 0; k < m / 2; k++) {
+            const p1 = circle[k];
+            const p2 = circle[m - 1 - k];
+
+            if (p1 === '__BYE__') {
+              bye.push(p2);
+            } else if (p2 === '__BYE__') {
+              bye.push(p1);
+            } else {
+              teams.push([p1, p2]);
+            }
+          }
+
+          // Order matches among these teams within the round
+          const matches = orderTeamMatches(teams.length);
+
+          generatedRounds.push({
+            teams: teams,
+            bye: bye,
+            matches: matches
+          });
+
+          // Rotate circle: circle[0] remains fixed, circle[1..m-1] shifts cyclically
+          const fixed = circle[0];
+          const rotating = circle.slice(1);
+          const last = rotating.pop();
+          rotating.unshift(last);
+          circle.splice(0, circle.length, fixed, ...rotating);
+        }
+
+        return generatedRounds;
+      }
+
+      /**
+       * Match Sequencing within a Round:
+       * Generates all T*(T-1)/2 team-vs-team matches.
+       * Orders them to minimize back-to-back appearances of the same team and maximize rest.
+       */
+      function orderTeamMatches(numTeams) {
+        const allPairs = [];
+        for (let i = 0; i < numTeams; i++) {
+          for (let j = i + 1; j < numTeams; j++) {
+            allPairs.push({ a: i, b: j, s: 0 });
+          }
+        }
+
+        if (allPairs.length <= 1) return allPairs;
+
+        const remaining = [...allPairs];
+        const ordered = [];
+        const lastPlayed = new Array(numTeams).fill(-999);
+
+        while (remaining.length > 0) {
+          let bestIdx = -1;
+          let bestScore = -Infinity;
+          const currentStep = ordered.length;
+          const prevMatch = ordered[ordered.length - 1];
+
+          for (let idx = 0; idx < remaining.length; idx++) {
+            const m = remaining[idx];
+            let score = 0;
+
+            // Penalty if either team played in the immediately preceding match
+            const overlapPrev = prevMatch && (
+              m.a === prevMatch.a || m.a === prevMatch.b ||
+              m.b === prevMatch.a || m.b === prevMatch.b
+            );
+
+            if (overlapPrev) {
+              score -= 10000;
+            }
+
+            // Rest bonus: favor matches where both teams rested the most
+            const restA = currentStep - lastPlayed[m.a];
+            const restB = currentStep - lastPlayed[m.b];
+            const minRest = Math.min(restA, restB);
+            const totalRest = restA + restB;
+            score += minRest * 50 + totalRest;
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestIdx = idx;
+            }
+          }
+
+          const picked = remaining.splice(bestIdx, 1)[0];
+          ordered.push(picked);
+          lastPlayed[picked.a] = currentStep;
+          lastPlayed[picked.b] = currentStep;
+        }
+
+        return ordered;
+      }
+
+      /* -----------------------------------------------------------------------
+         State Persistence & Cloud Sync
+         ----------------------------------------------------------------------- */
+
+      function updateSyncStatusUI(status, label, note) {
+        const dot = document.getElementById('syncDot');
+        const text = document.getElementById('syncStatusText');
+        const noteEl = document.getElementById('syncNoteText');
+
+        if (status === 'connected') {
+          dot.className = 'sync-indicator-dot pulse';
+        } else if (status === 'offline') {
+          dot.className = 'sync-indicator-dot offline';
+        } else {
+          dot.className = 'sync-indicator-dot';
+        }
+
+        text.textContent = label;
+        if (note) noteEl.textContent = note;
+      }
+
+      function initStorage() {
+        // 1. Check for Claude Artifact window.db capability
+        if (typeof window !== 'undefined' && window.db && typeof window.db.collection === 'function') {
+          try {
+            syncProvider = 'artifact';
+            updateSyncStatusUI('connected', 'Live Sync (Claude Artifact DB)', 'Shared multi-user session');
+            const docRef = window.db.collection('sessions').doc('main');
+            docRef.onSnapshot(function (doc) {
+              if (doc && doc.exists) {
+                const data = doc.data();
+                if (data && typeof data === 'object') {
+                  applyIncomingState(data, false);
+                }
+              }
+            }, function (err) {
+              console.warn('Artifact DB onSnapshot error, falling back', err);
+              fallbackToLocal();
+            });
+            return;
+          } catch (e) {
+            console.warn('Error connecting to window.db:', e);
+          }
+        }
+
+        // 2. Check for backend server REST/SSE if running on HTTP/HTTPS
+        if (window.location.protocol.startsWith('http')) {
+          fetch('/api/session')
+            .then(function (res) {
+              if (!res.ok) throw new Error('No server API');
+              return res.json();
+            })
+            .then(function (serverData) {
+              syncProvider = 'server';
+              updateSyncStatusUI('connected', 'Live Sync (Shared Server)', 'All devices stay synchronized');
+              if (serverData && serverData.players && serverData.players.length > 0) {
+                applyIncomingState(serverData, false);
+              } else {
+                loadFromLocalStorageIfAvailable();
+              }
+              connectSSE();
+            })
+            .catch(function () {
+              // Server API not present (e.g. static file or offline)
+              fallbackToLocal();
+            });
+          return;
+        }
+
+        // 3. Static file / Local fallback
+        fallbackToLocal();
+      }
+
+      function fallbackToLocal() {
+        syncProvider = 'local';
+        updateSyncStatusUI('offline', 'Local Storage', 'Changes saved on this device only');
+        loadFromLocalStorageIfAvailable();
+      }
+
+      function loadFromLocalStorageIfAvailable() {
+        try {
+          const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.players)) {
+              applyIncomingState(parsed, false);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed reading localStorage', e);
+        }
+      }
+
+      function connectSSE() {
+        if (typeof EventSource === 'undefined') return;
+        try {
+          const es = new EventSource('/api/events');
+          es.onmessage = function (e) {
+            try {
+              const data = JSON.parse(e.data);
+              if (data && typeof data === 'object') {
+                applyIncomingState(data, false);
+              }
+            } catch (err) {
+              console.warn('SSE parse error', err);
+            }
+          };
+          es.onerror = function () {
+            // Keep connection attempt silent
+          };
+        } catch (e) {
+          console.warn('SSE connect failed', e);
+        }
+      }
+
+      // Persist State across connected providers
+      function persistState() {
+        // Save to localStorage immediately as local backup
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          console.warn('localStorage save failed', e);
+        }
+
+        // Broadcast to other tabs on same device
+        if (broadcastChannel) {
+          try {
+            broadcastChannel.postMessage(state);
+          } catch (e) {}
+        }
+
+        // Persist to Claude Artifact DB
+        if (syncProvider === 'artifact' && window.db) {
+          try {
+            window.db.collection('sessions').doc('main').set(state);
+          } catch (e) {
+            console.warn('Artifact DB set error', e);
+          }
+        }
+
+        // Persist to Server REST API
+        if (syncProvider === 'server') {
+          fetch('/api/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(state)
+          }).catch(function (err) {
+            console.warn('Server sync error', err);
+          });
+        }
+      }
+
+      function applyIncomingState(newState, triggerPersist) {
+        if (!newState || !Array.isArray(newState.players)) return;
+        state = {
+          players: newState.players,
+          rounds: Array.isArray(newState.rounds) ? newState.rounds : []
+        };
+
+        if (triggerPersist) {
+          persistState();
+        }
+
+        renderApp();
+      }
+
+      /* -----------------------------------------------------------------------
+         UI Rendering & Interaction Handling
+         ----------------------------------------------------------------------- */
+
+      function renderApp() {
+        const isScheduled = state.rounds && state.rounds.length > 0;
+
+        const setupView = document.getElementById('setupView');
+        const scheduleView = document.getElementById('scheduleView');
+
+        if (!isScheduled) {
+          setupView.style.display = 'block';
+          scheduleView.style.display = 'none';
+          renderSetupView();
+        } else {
+          setupView.style.display = 'none';
+          scheduleView.style.display = 'block';
+          renderScheduleView();
+        }
+      }
+
+      // Render Setup View (chips, fairness calculations, buttons)
+      function renderSetupView() {
+        const chipsContainer = document.getElementById('playerChipsContainer');
+        const createBtn = document.getElementById('createScheduleBtn');
+        const previewBox = document.getElementById('fairnessPreviewBox');
+        const previewContent = document.getElementById('fairnessPreviewContent');
+
+        if (draftPlayers.length === 0) {
+          chipsContainer.innerHTML = '<div class="chips-empty-hint">No players added yet. Add at least 4 players.</div>';
+          createBtn.disabled = true;
+          previewBox.style.display = 'none';
+          return;
+        }
+
+        chipsContainer.innerHTML = '';
+        draftPlayers.forEach(function (name, index) {
+          const chip = document.createElement('div');
+          chip.className = 'player-chip';
+          chip.innerHTML = `
+            <div class="chip-avatar">${escapeHtml(name.charAt(0).toUpperCase())}</div>
+            <span>${escapeHtml(name)}</span>
+            <button type="button" class="chip-remove" title="Remove ${escapeHtml(name)}" onclick="window.badmintonApp.removeDraftPlayer(${index})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          `;
+          chipsContainer.appendChild(chip);
+        });
+
+        const n = draftPlayers.length;
+        if (n >= 4) {
+          createBtn.disabled = false;
+          previewBox.style.display = 'flex';
+
+          const isOdd = n % 2 !== 0;
+          const teamsPerRound = isOdd ? (n - 1) / 2 : n / 2;
+          const roundsCount = isOdd ? n : n - 1;
+          const matchesPerRound = (teamsPerRound * (teamsPerRound - 1)) / 2;
+          const totalMatches = roundsCount * matchesPerRound;
+
+          previewContent.innerHTML = `
+            <h4>Guaranteed Fair Schedule (${n} Players)</h4>
+            <p>
+              • <strong>${roundsCount} Rounds</strong> total<br>
+              • <strong>${teamsPerRound} Teams</strong> per round (${matchesPerRound} matches per round, ${totalMatches} total)<br>
+              • ${isOdd ? '<strong>1 Bye</strong> per round (every player sits out exactly 1 round)<br>' : '<strong>No Byes</strong> (all players active every round)<br>'}
+              • <strong>Fairness:</strong> Every player partners with every other player exactly once!
+            </p>
+          `;
+        } else {
+          createBtn.disabled = true;
+          previewBox.style.display = 'none';
+        }
+      }
+
+      // Render Active Schedule View
+      function renderScheduleView() {
+        const n = state.players.length;
+        const totalRounds = state.rounds.length;
+
+        // Calculate total matches & played matches
+        let totalMatches = 0;
+        let playedMatches = 0;
+        let activePlayingMatches = 0;
+
+        // Player finished matches tracker
+        const playerStats = {};
+        state.players.forEach(function (name) {
+          playerStats[name] = {
+            finished: 0,
+            isPlaying: false,
+            isBye: false,
+            byeCount: 0
+          };
+        });
+
+        state.rounds.forEach(function (round) {
+          if (round.bye && round.bye.length > 0) {
+            round.bye.forEach(function (byePlayer) {
+              if (playerStats[byePlayer]) {
+                playerStats[byePlayer].byeCount++;
+              }
+            });
+          }
+
+          if (round.matches && round.teams) {
+            round.matches.forEach(function (match) {
+              totalMatches++;
+              if (match.s === 2) {
+                playedMatches++;
+                const teamA = round.teams[match.a] || [];
+                const teamB = round.teams[match.b] || [];
+                teamA.concat(teamB).forEach(function (p) {
+                  if (playerStats[p]) playerStats[p].finished++;
+                });
+              } else if (match.s === 1) {
+                activePlayingMatches++;
+                const teamA = round.teams[match.a] || [];
+                const teamB = round.teams[match.b] || [];
+                teamA.concat(teamB).forEach(function (p) {
+                  if (playerStats[p]) playerStats[p].isPlaying = true;
+                });
+              }
+            });
+          }
+        });
+
+        // Update Stat Counters
+        document.getElementById('statPlayerCount').textContent = n;
+        document.getElementById('statRoundCount').textContent = totalRounds;
+        document.getElementById('statMatchesPlayed').textContent = `${playedMatches} / ${totalMatches}`;
+
+        const percent = totalMatches > 0 ? Math.round((playedMatches / totalMatches) * 100) : 0;
+        document.getElementById('sessionProgressPercent').textContent = `${percent}%`;
+        document.getElementById('sessionProgressBar').style.width = `${percent}%`;
+
+        // Locked Players List
+        const lockedTags = document.getElementById('lockedPlayerTags');
+        lockedTags.innerHTML = state.players.map(function (p) {
+          return `<span class="locked-tag">${escapeHtml(p)}</span>`;
+        }).join('');
+
+        // Render Rounds
+        const container = document.getElementById('roundsListContainer');
+        container.innerHTML = '';
+
+        state.rounds.forEach(function (round, rIdx) {
+          const roundCard = document.createElement('div');
+          roundCard.className = 'round-card';
+          roundCard.id = `round-card-${rIdx}`;
+
+          // Count matches played in this round
+          let rMatches = round.matches.length;
+          let rPlayed = 0;
+          round.matches.forEach(function (m) {
+            if (m.s === 2) rPlayed++;
+          });
+
+          const isRoundCompleted = rPlayed === rMatches && rMatches > 0;
+
+          // Round Header
+          let html = `
+            <div class="round-header">
+              <div class="round-title-group">
+                <span class="round-badge">Round ${rIdx + 1}</span>
+                <span style="font-size:0.88rem; font-weight:700; color:var(--text-muted);">${rMatches} Matches</span>
+              </div>
+              <span class="round-progress-pill ${isRoundCompleted ? 'completed' : ''}">
+                ${isRoundCompleted ? '✓ ' : ''}${rPlayed} of ${rMatches} played
+              </span>
+            </div>
+          `;
+
+          // Bye notification if present
+          if (round.bye && round.bye.length > 0) {
+            html += `
+              <div class="bye-banner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 4v16"></path>
+                  <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+                  <path d="M2 17h20"></path>
+                  <circle cx="6" cy="8" r="2"></circle>
+                </svg>
+                <span>Sitting out this round: <strong>${escapeHtml(round.bye.join(', '))}</strong></span>
+              </div>
+            `;
+          }
+
+          // Teams breakdown for this round
+          html += `
+            <div class="round-teams-section">
+              <div class="section-small-title">Teams this round</div>
+              <div class="teams-grid">
+          `;
+
+          round.teams.forEach(function (team, tIdx) {
+            html += `
+              <div class="team-badge">
+                <div class="team-badge-name">Team ${tIdx + 1}</div>
+                <div class="team-badge-players" title="${escapeHtml(team.join(' & '))}">${escapeHtml(team.join(' & '))}</div>
+              </div>
+            `;
+          });
+
+          html += `
+              </div>
+            </div>
+          `;
+
+          // Matches
+          html += `
+            <div class="matches-container">
+              <div class="section-small-title">Matches</div>
+          `;
+
+          round.matches.forEach(function (match, mIdx) {
+            const teamA = round.teams[match.a] || ['Team ' + (match.a + 1)];
+            const teamB = round.teams[match.b] || ['Team ' + (match.b + 1)];
+
+            const statusClass = match.s === 1 ? 'status-playing' : (match.s === 2 ? 'status-played' : '');
+
+            html += `
+              <div class="match-item ${statusClass}" id="match-${rIdx}-${mIdx}">
+                <div class="match-header-row">
+                  <span class="match-label">Match ${mIdx + 1}</span>
+                  <span class="match-live-tag">
+                    ${match.s === 1 ? '<span class="sync-indicator-dot pulse" style="width:6px; height:6px;"></span> Playing Now' : 'Finished ✓'}
+                  </span>
+                </div>
+
+                <div class="match-teams-display">
+                  <div class="team-display-box">
+                    <span class="team-side-title">Team ${match.a + 1}</span>
+                    <span class="team-names-str">${escapeHtml(teamA.join(' & '))}</span>
+                  </div>
+                  <div class="match-vs-divider">VS</div>
+                  <div class="team-display-box text-right">
+                    <span class="team-side-title">Team ${match.b + 1}</span>
+                    <span class="team-names-str">${escapeHtml(teamB.join(' & '))}</span>
+                  </div>
+                </div>
+
+                <div class="match-actions">
+                  <button 
+                    type="button" 
+                    class="btn-match-state ${match.s === 1 ? 'active-playing' : ''}" 
+                    onclick="window.badmintonApp.toggleMatchStatus(${rIdx}, ${mIdx}, 1)"
+                    title="Toggle match in progress"
+                  >
+                    <svg viewBox="0 0 24 24" fill="${match.s === 1 ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Playing
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn-match-state ${match.s === 2 ? 'active-played' : ''}" 
+                    onclick="window.badmintonApp.toggleMatchStatus(${rIdx}, ${mIdx}, 2)"
+                    title="Toggle match finished"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Played
+                  </button>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `</div>`;
+          roundCard.innerHTML = html;
+          container.appendChild(roundCard);
+        });
+
+        // Render Player Activity Table
+        renderPlayerStatsTable(playerStats);
+      }
+
+      function renderPlayerStatsTable(playerStats) {
+        const tbody = document.getElementById('playerStatsTableBody');
+        const byeHeader = document.getElementById('byeHeaderCol');
+
+        const hasAnyByes = state.players.length % 2 !== 0;
+        byeHeader.style.display = hasAnyByes ? 'table-cell' : 'none';
+
+        tbody.innerHTML = '';
+        state.players.forEach(function (name) {
+          const stats = playerStats[name] || { finished: 0, isPlaying: false, byeCount: 0 };
+
+          let statusBadge = '<span class="player-status-badge resting">Resting</span>';
+          if (stats.isPlaying) {
+            statusBadge = '<span class="player-status-badge on-court">On Court</span>';
+          }
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+              <div class="player-cell-name">
+                <div class="chip-avatar" style="width:24px; height:24px;">${escapeHtml(name.charAt(0).toUpperCase())}</div>
+                <span>${escapeHtml(name)}</span>
+              </div>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align: center;">
+              <span class="matches-count-badge">${stats.finished}</span>
+            </td>
+            ${hasAnyByes ? `<td style="text-align: right; color: var(--text-muted); font-weight: 600;">${stats.byeCount}</td>` : ''}
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      /* -----------------------------------------------------------------------
+         User Actions
+         ----------------------------------------------------------------------- */
+
+      function addPlayerFromInput() {
+        const input = document.getElementById('playerNameInput');
+        const name = input.value.trim();
+        if (!name) return;
+
+        // Case-insensitive duplicate check
+        const exists = draftPlayers.some(function (p) {
+          return p.toLowerCase() === name.toLowerCase();
+        });
+
+        if (exists) {
+          showToast(`"${name}" is already in the list`);
+          return;
+        }
+
+        draftPlayers.push(name);
+        input.value = '';
+        renderSetupView();
+        input.focus();
+      }
+
+      function removeDraftPlayer(index) {
+        if (index >= 0 && index < draftPlayers.length) {
+          draftPlayers.splice(index, 1);
+          renderSetupView();
+        }
+      }
+
+      function clearPlayersDraft() {
+        if (draftPlayers.length === 0) return;
+        draftPlayers = [];
+        renderSetupView();
+        showToast('Player list cleared');
+      }
+
+      function loadSamplePlayers(count) {
+        const sampleNames = ['Alex', 'Ben', 'Chris', 'David', 'Eva', 'Frank', 'Grace', 'Henry', 'Iris', 'Jack'];
+        draftPlayers = sampleNames.slice(0, count);
+        renderSetupView();
+        showToast(`Added ${count} sample players`);
+      }
+
+      function createSchedule() {
+        if (draftPlayers.length < 4) {
+          showToast('Add at least 4 players to create a schedule');
+          return;
+        }
+
+        const generatedRounds = generateCircleRounds(draftPlayers);
+        state = {
+          players: [...draftPlayers],
+          rounds: generatedRounds
+        };
+
+        persistState();
+        renderApp();
+        showToast('Schedule created! Partner pairings generated.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      /**
+       * Match status toggle logic:
+       * - Every match has two buttons: "Playing" (target: 1) and "Played" (target: 2).
+       * - If neither is pressed, status is 0 ("not played").
+       * - Pressing an active button again clears the status (returns to 0).
+       */
+      function toggleMatchStatus(roundIdx, matchIdx, targetStatus) {
+        if (!state.rounds[roundIdx] || !state.rounds[roundIdx].matches[matchIdx]) return;
+
+        const currentStatus = state.rounds[roundIdx].matches[matchIdx].s;
+        let newStatus = 0;
+
+        if (currentStatus === targetStatus) {
+          // Pressing an active button again clears the status
+          newStatus = 0;
+        } else {
+          newStatus = targetStatus;
+        }
+
+        state.rounds[roundIdx].matches[matchIdx].s = newStatus;
+        persistState();
+        renderApp();
+      }
+
+      function confirmNewSession() {
+        document.getElementById('confirmResetModal').classList.add('open');
+      }
+
+      function closeResetModal() {
+        document.getElementById('confirmResetModal').classList.remove('open');
+      }
+
+      function executeNewSessionReset() {
+        closeResetModal();
+        draftPlayers = [...state.players]; // retain players in draft for convenience
+        state = {
+          players: [],
+          rounds: []
+        };
+
+        if (syncProvider === 'server') {
+          fetch('/api/session', { method: 'DELETE' }).catch(function () {});
+        }
+
+        persistState();
+        renderApp();
+        showToast('Session reset. Player list ready for next game.');
+      }
+
+      /* -----------------------------------------------------------------------
+         WhatsApp Formatted Schedule Generator
+         ----------------------------------------------------------------------- */
+
+      function generateWhatsAppText() {
+        if (!state.rounds || state.rounds.length === 0) return '';
+
+        let text = `🏸 *BADMINTON DOUBLES SCHEDULE*\n`;
+        text += `👥 *Players (${state.players.length}):* ${state.players.join(', ')}\n`;
+        text += `🔄 *Total Rounds:* ${state.rounds.length}\n\n`;
+
+        state.rounds.forEach(function (round, rIdx) {
+          text += `*--- ROUND ${rIdx + 1} ---*\n`;
+          if (round.bye && round.bye.length > 0) {
+            text += `🛌 *Sitting Out:* ${round.bye.join(', ')}\n`;
+          }
+
+          round.matches.forEach(function (match, mIdx) {
+            const teamA = round.teams[match.a] ? round.teams[match.a].join(' & ') : `Team ${match.a + 1}`;
+            const teamB = round.teams[match.b] ? round.teams[match.b].join(' & ') : `Team ${match.b + 1}`;
+            const statusEmoji = match.s === 2 ? ' [Played ✓]' : (match.s === 1 ? ' [Playing 🏸]' : '');
+            text += `Match ${mIdx + 1}: ${teamA}  vs  ${teamB}${statusEmoji}\n`;
+          });
+          text += `\n`;
+        });
+
+        text += `✨ *Every player partners with every other player exactly once!*`;
+        return text;
+      }
+
+      function openWhatsAppModal() {
+        const text = generateWhatsAppText();
+        document.getElementById('whatsAppTextarea').value = text;
+        document.getElementById('whatsAppModal').classList.add('open');
+      }
+
+      function closeWhatsAppModal() {
+        document.getElementById('whatsAppModal').classList.remove('open');
+      }
+
+      function copyWhatsAppText() {
+        const textarea = document.getElementById('whatsAppTextarea');
+        textarea.select();
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textarea.value).then(function () {
+              showToast('Copied schedule to clipboard!');
+              closeWhatsAppModal();
+            });
+          } else {
+            document.execCommand('copy');
+            showToast('Copied schedule to clipboard!');
+            closeWhatsAppModal();
+          }
+        } catch (e) {
+          showToast('Please copy manually from the box');
+        }
+      }
+
+      /* -----------------------------------------------------------------------
+         Theme & Share Helpers
+         ----------------------------------------------------------------------- */
+
+      function initTheme() {
+        const savedTheme = localStorage.getItem('badminton_theme');
+        if (savedTheme) {
+          setTheme(savedTheme);
+        } else {
+          setTheme('auto');
+        }
+      }
+
+      function setTheme(theme) {
+        const sun = document.getElementById('themeIconSun');
+        const moon = document.getElementById('themeIconMoon');
+
+        if (theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          sun.style.display = 'block';
+          moon.style.display = 'none';
+        } else if (theme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          sun.style.display = 'none';
+          moon.style.display = 'block';
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          sun.style.display = isDark ? 'block' : 'none';
+          moon.style.display = isDark ? 'none' : 'block';
+        }
+      }
+
+      function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme');
+        let next = 'dark';
+        if (current === 'dark') next = 'light';
+        else if (current === 'light') next = 'auto';
+        else next = 'dark';
+
+        localStorage.setItem('badminton_theme', next);
+        setTheme(next);
+        showToast(`Theme: ${next.toUpperCase()}`);
+      }
+
+      function copyShareLink() {
+        const url = window.location.href.split('#')[0];
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () {
+            showToast('Link copied to clipboard!');
+          }).catch(function () {
+            showToast('Share URL: ' + url);
+          });
+        } else {
+          showToast('Share URL: ' + url);
+        }
+      }
+
+      function showToast(msg) {
+        const toast = document.getElementById('appToast');
+        const text = document.getElementById('toastMessage');
+        text.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(function () {
+          toast.classList.remove('show');
+        }, 2600);
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      /* -----------------------------------------------------------------------
+         Expose Public API & Initialization
+         ----------------------------------------------------------------------- */
+
+      window.badmintonApp = {
+        addPlayerFromInput: addPlayerFromInput,
+        removeDraftPlayer: removeDraftPlayer,
+        clearPlayersDraft: clearPlayersDraft,
+        loadSamplePlayers: loadSamplePlayers,
+        createSchedule: createSchedule,
+        toggleMatchStatus: toggleMatchStatus,
+        confirmNewSession: confirmNewSession,
+        closeResetModal: closeResetModal,
+        executeNewSessionReset: executeNewSessionReset,
+        openWhatsAppModal: openWhatsAppModal,
+        closeWhatsAppModal: closeWhatsAppModal,
+        copyWhatsAppText: copyWhatsAppText,
+        showToast: showToast
+      };
+
+      document.addEventListener('DOMContentLoaded', function () {
+        initTheme();
+        initStorage();
+        renderApp();
+
+        document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+        document.getElementById('shareLinkBtn').addEventListener('click', copyShareLink);
+      });
+
+    })();
+  </script>
+</body>
+</html>
